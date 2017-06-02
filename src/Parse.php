@@ -22,6 +22,14 @@ class Parse
     const STATE_END_ADDRESS = 10;
     const STATE_START = 11;
 
+    const MULTIPLE_NONE = false;
+    const COMMA = 0x01;
+    const SPACE = 0x02;
+    const SEMICOLON = 0x04;
+    const CRLF = 0x08;
+    const TAB = 0x10;
+    const WHITESPACE = 0x1A;
+
     /**
      * @var Parse
      */
@@ -208,9 +216,17 @@ class Parse
      *            );
      *
      */
-    public function parse($emails, $multiple = true, $encoding = 'UTF-8')
+    public function parse($emails, $multiple = self::WHITESPACE | self::COMMA, $encoding = 'UTF-8')
     {
         $emailAddresses = [];
+
+        $separatorTypes = self::MULTIPLE_NONE;
+        if ($multiple === true) {
+            $multiple = self::WHITESPACE | self::COMMA;
+        }
+        if ($multiple) {
+            $separatorTypes = ($multiple & self::COMMA) | ($multiple & self::SEMICOLON);
+        }
 
         // Variables to be used during email address collection
         $emailAddress = $this->buildEmailAddressArray();
@@ -239,11 +255,7 @@ class Parse
                     // Skip ahead is set when a bad email address is encountered
                     //  It's supposed to skip to the next delimiter and continue parsing from there
                     if ($multiple &&
-                        ($curChar == ' ' ||
-                        $curChar == "\r" ||
-                        $curChar == "\n" ||
-                        $curChar == "\t" ||
-                         $curChar == ',')) {
+                        $this->isSeparator($multiple, $curChar)) {
                         $state = self::STATE_END_ADDRESS;
                     } else {
                         $emailAddress['original_address'] .= $curChar;
@@ -252,27 +264,26 @@ class Parse
                     break;
                     /** @noinspection PhpMissingBreakStatementInspection */
                 case self::STATE_TRIM:
-                if ($curChar == ' ' ||
-                    $curChar == "\r" ||
-                    $curChar == "\n" ||
-                    $curChar == "\t") {
-                    break;
-                } else {
-                    $state = self::STATE_ADDRESS;
-                    if ($curChar == '"') {
-                        $emailAddress['original_address'] .= $curChar;
-                        $state = self::STATE_QUOTE;
+                    if ($this->isSeparator(self::WHITESPACE, $curChar)) {
                         break;
-                    } elseif ($curChar == '(') {
-                        $emailAddress['original_address'] .= $curChar;
-                        $state = self::STATE_COMMENT;
-                        break;
+                    } else {
+                        $state = self::STATE_ADDRESS;
+                        if ($curChar == '"') {
+                            $emailAddress['original_address'] .= $curChar;
+                            $state = self::STATE_QUOTE;
+                            break;
+                        } elseif ($curChar == '(') {
+                            $emailAddress['original_address'] .= $curChar;
+                            $state = self::STATE_COMMENT;
+                            break;
+                        }
+                        // Fall through to next case self::STATE_ADDRESS on purpose here
                     }
-                    // Fall through to next case self::STATE_ADDRESS on purpose here
-                }
                 // Fall through
                 case self::STATE_ADDRESS:
-                    if ($curChar != ',' || !$multiple) {
+                    $separatorCheck = false;
+                    if ($multiple === self::MULTIPLE_NONE ||
+                        $separatorTypes && !($separatorCheck = $this->isSeparator($separatorTypes, $curChar))) {
                         $emailAddress['original_address'] .= $curChar;
                     }
 
@@ -281,7 +292,8 @@ class Parse
                         $state = self::STATE_COMMENT;
                         $commentNestLevel = 1;
                         break;
-                    } elseif ($curChar == ',') {
+                    } elseif ($separatorCheck ||
+                        ($multiple === self::MULTIPLE_NONE && $this->isSeparator(self::COMMA | self::SEMICOLON, $curChar))) {
                         // Handle Comma
                         if ($multiple && ($subState == self::STATE_DOMAIN || $subState == self::STATE_AFTER_DOMAIN)) {
                             // If we're already in the domain part, this should be the end of the address
@@ -290,14 +302,25 @@ class Parse
                         } else {
                             $emailAddress['invalid'] = true;
                             if ($multiple || ($i + 5) >= $len) {
-                                $emailAddress['invalid_reason'] = 'Misplaced Comma or missing "@" symbol';
-                            } else {
-                                $emailAddress['invalid_reason'] = 'Comma not permitted - only one email address allowed';
+                                if ($curChar === ',') {
+                                    $emailAddress['invalid_reason'] = "Misplaced comma or ";
+                                }
+                                elseif ($curChar === ';') {
+                                    $emailAddress['invalid_reason'] = "Misplaced semicolon or ";
+                                }
+                                $emailAddress['invalid_reason'] .= 'missing "@" symbol';
+                            }
+                            else {
+                                if ($curChar === ',') {
+                                    $emailAddress['invalid_reason'] = 'Comma';
+                                }
+                                elseif ($curChar === ';') {
+                                    $emailAddress['invalid_reason'] = "Semicolon";
+                                }
+                                $emailAddress['invalid_reason'] .= ' not permitted - only one email address allowed';
                             }
                         }
-                    } elseif ($curChar == ' ' ||
-                          $curChar == "\t" || $curChar == "\r" ||
-                          $curChar == "\n") {
+                    } elseif ($this->isSeparator(self::WHITESPACE, $curChar)) {
                         // Handle Whitespace
 
                         // Look ahead for comments after the address
@@ -307,10 +330,7 @@ class Parse
                             if ($lookAheadChar == '(') {
                                 $foundComment = true;
                                 break;
-                            } elseif ($lookAheadChar != ' ' &&
-                                $lookAheadChar != "\t" &&
-                                $lookAheadChar != "\r" &&
-                                $lookAheadChar != "\n") {
+                            } elseif (!$this->isSeparator(self::WHITESPACE, $lookAheadChar)) {
                                 break;
                             }
                         }
@@ -324,6 +344,14 @@ class Parse
                             }
                         } elseif ($subState == self::STATE_DOMAIN || $subState == self::STATE_AFTER_DOMAIN) {
                             // If we're already in the domain part, this should be the end of the whole address
+
+
+                            //// Whitespace is permitted in certain cases
+                            ///    1) Followed by a , or ; if COMMA or S
+                            ///    2)
+
+
+
                             $state = self::STATE_END_ADDRESS;
                             break;
                         } else {
@@ -332,7 +360,7 @@ class Parse
                                 $emailAddress['invalid_reason'] = 'Email address contains whitespace';
                             } else {
                                 // If the previous section was a quoted string, then use that for the name
-                    $this->handleQuote($emailAddress);
+                                $this->handleQuote($emailAddress);
                                 $emailAddress['name_parsed'] .= $curChar;
                             }
                         }
@@ -627,6 +655,42 @@ class Parse
         } else {
             return $emailAddresses[0];
         }
+    }
+
+    /**
+     * Test to see if the character matches one of the $separatorTypes passed in
+     * @param $separatorTypes
+     * @param $char
+     * @return bool
+     */
+    public function isSeparator($separatorTypes, $char) {
+        if (!$separatorTypes) {
+            return false;
+        }
+
+        if ($separatorTypes & self::COMMA && $char === ',') {
+            return true;
+        }
+
+        if ($separatorTypes & self::SEMICOLON && $char === ';') {
+            return true;
+        }
+
+
+        if ($separatorTypes & self::CRLF &&
+            ($char === "\r" || $char === "\n")) {
+            return true;
+        }
+
+        if ($separatorTypes & self::TAB && $char === "\t") {
+            return true;
+        }
+
+        if ($separatorTypes & self::SPACE && $char === ' ') {
+            return true;
+        }
+
+        return false;
     }
 
     /**

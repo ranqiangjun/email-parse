@@ -114,6 +114,26 @@
                 invalid_reason: null
 -
     emails: 'Testing D Name <tname@asdf.ghjkl.com>'
+    multiple: 0x04
+    result:
+        success: true
+        reason: null
+        email_addresses:
+            -
+                address: 'Testing D Name <tname@asdf.ghjkl.com>'
+                simple_address: tname@asdf.ghjkl.com
+                original_address: 'Testing D Name <tname@asdf.ghjkl.com>'
+                name: 'Testing D Name'
+                name_parsed: 'Testing D Name'
+                local_part: tname
+                local_part_parsed: tname
+                domain_part: asdf.ghjkl.com
+                domain: asdf.ghjkl.com
+                ip: ''
+                invalid: false
+                invalid_reason: null
+-
+    emails: 'Testing D Name <tname@asdf.ghjkl.com>'
     multiple: false
     result:
         address: 'Testing D Name <tname@asdf.ghjkl.com>'
@@ -182,6 +202,39 @@
     multiple: true
     result:
         success: true
+        reason: null
+        email_addresses:
+            -
+                address: test.testing@asdf.ghjkl.com
+                simple_address: test.testing@asdf.ghjkl.com
+                original_address: test.testing@asdf.ghjkl.com
+                name: ''
+                name_parsed: ''
+                local_part: test.testing
+                local_part_parsed: test.testing
+                domain_part: asdf.ghjkl.com
+                domain: asdf.ghjkl.com
+                ip: ''
+                invalid: false
+                invalid_reason: null
+            -
+                address: test.testing2@asdf.ghjkl.com
+                simple_address: test.testing2@asdf.ghjkl.com
+                original_address: test.testing2@asdf.ghjkl.com
+                name: ''
+                name_parsed: ''
+                local_part: test.testing2
+                local_part_parsed: test.testing2
+                domain_part: asdf.ghjkl.com
+                domain: asdf.ghjkl.com
+                ip: ''
+                invalid: false
+                invalid_reason: null
+-
+    emails: 'test.testing@asdf.ghjkl.com test.testing2@asdf.ghjkl.com'
+    multiple: 0x04
+    result:
+        success: false
         reason: null
         email_addresses:
             -
@@ -520,7 +573,7 @@
                 domain: ''
                 ip: ''
                 invalid: true
-                invalid_reason: 'Misplaced Comma or missing "@" symbol'
+                invalid_reason: 'Misplaced comma or missing "@" symbol'
             -
                 address: 'tn''''''ame@asdf.ghjkl.com'
                 simple_address: 'tn''''''ame@asdf.ghjkl.com'

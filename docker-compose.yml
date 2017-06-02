@@ -1,0 +1,10 @@
+version: "3"
+services:
+    php:
+        build: ./php
+        environment:
+            - XDEBUG_CONFIG="remote_host=172.17.0.1 idekey=PHPSTORM"
+        command: [ bin/phpunit ]
+        working_dir: /opt/email-parse
+        volumes:
+            - ./:/opt/email-parse
