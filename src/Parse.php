@@ -24,11 +24,13 @@ class Parse
 
     const MULTIPLE_NONE = false;
     const COMMA = 0x01;
-    const SPACE = 0x02;
-    const SEMICOLON = 0x04;
-    const CRLF = 0x08;
-    const TAB = 0x10;
-    const WHITESPACE = 0x1A;
+    const COMMA_PERMISSIVE = 0x02;
+    const SPACE = 0x04;
+    const SEMICOLON = 0x08;
+    const SEMICOLON_PERMISSIVE = 0x10;
+    const CRLF = 0x20;
+    const TAB = 0x40;
+    const WHITESPACE = 0x64;
 
     /**
      * @var Parse
@@ -220,12 +222,11 @@ class Parse
     {
         $emailAddresses = [];
 
-        $separatorTypes = self::MULTIPLE_NONE;
         if ($multiple === true) {
             $multiple = self::WHITESPACE | self::COMMA;
         }
-        if ($multiple) {
-            $separatorTypes = ($multiple & self::COMMA) | ($multiple & self::SEMICOLON);
+        else {
+            $multiple = self::MULTIPLE_NONE;
         }
 
         // Variables to be used during email address collection
@@ -283,7 +284,7 @@ class Parse
                 case self::STATE_ADDRESS:
                     $separatorCheck = false;
                     if ($multiple === self::MULTIPLE_NONE ||
-                        $separatorTypes && !($separatorCheck = $this->isSeparator($separatorTypes, $curChar))) {
+                        !($separatorCheck = $this->isSeparator($multiple, $curChar))) {
                         $emailAddress['original_address'] .= $curChar;
                     }
 
@@ -347,8 +348,12 @@ class Parse
 
 
                             //// Whitespace is permitted in certain cases
-                            ///    1) Followed by a , or ; if COMMA or S
+                            ///    1) Followed by a , or ; if COMMA_PERMISSIVE or SEMICOLON_PERMISSIVE is the type
                             ///    2)
+                            if ($separatorCheck )
+
+
+
 
 
 

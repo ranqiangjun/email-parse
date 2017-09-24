@@ -1,0 +1,35 @@
+
+
+-
+    emails: "test.testing@asdf.ghjkl.com test.testing2@asdf.ghjkl.com"
+    multiple: 0x04
+    result:
+        success: false
+        reason: null
+        email_addresses:
+            -
+                address: test.testing@asdf.ghjkl.com
+                simple_address: test.testing@asdf.ghjkl.com
+                original_address: test.testing@asdf.ghjkl.com
+                name: ''
+                name_parsed: ''
+                local_part: test.testing
+                local_part_parsed: test.testing
+                domain_part: asdf.ghjkl.com
+                domain: asdf.ghjkl.com
+                ip: ''
+                invalid: false
+                invalid_reason: null
+            -
+                address: test.testing2@asdf.ghjkl.com
+                simple_address: test.testing2@asdf.ghjkl.com
+                original_address: test.testing2@asdf.ghjkl.com
+                name: ''
+                name_parsed: ''
+                local_part: test.testing2
+                local_part_parsed: test.testing2
+                domain_part: asdf.ghjkl.com
+                domain: asdf.ghjkl.com
+                ip: ''
+                invalid: false
+                invalid_reason: null
