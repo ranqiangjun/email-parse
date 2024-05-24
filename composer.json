@@ -1,5 +1,5 @@
 {
-  "name": "mmucklo/email-parse",
+  "name": "jungleran/email-parse",
   "type": "library",
   "description": "email-parse a (reasonably) RFC822 / RF2822-compliant library for batch parsing multiple (and single) email addresses",
   "license": "MIT",
@@ -24,9 +24,9 @@
     "symfony/yaml": ">=4"
   },
   "require": {
-    "php": ">=7.1",
+    "php": ">=8.2",
     "psr/log": ">=1.0",
-    "laminas/laminas-validator": "^2.13",
+    "laminas/laminas-validator": "^2.54",
     "ext-mbstring": "*",
     "symfony/polyfill-intl-idn": "*"
   },
